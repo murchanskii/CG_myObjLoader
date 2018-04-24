@@ -71,7 +71,7 @@ void Model::center_model_by_dimension(GLuint &first_idx,
                 vertices[s][i] += half_h - max;
             }
         }
-    } else {
+    } else if (max > half_h) {
         for (GLuint s = 0; s < num_shapes; ++s) {
             for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
                 vertices[s][i] -= max - half_h;
@@ -158,10 +158,12 @@ void Model::load_model(std::string path) {
 }
 
 void Model::load_texture(Mesh &mesh, tinyobj::material_t &material) {
-    mesh.set_material(material.ambient,
-                      material.diffuse,
-                      material.specular,
-                      material.shininess);
+    if (material.name.length() > 0) {
+        mesh.set_material(material.ambient,
+                          material.diffuse,
+                          material.specular,
+                          material.shininess);
+    }
     GLint tex_w, tex_h, nr_channels;
     std::string filename = _directory_to_obj + material.diffuse_texname;
 
