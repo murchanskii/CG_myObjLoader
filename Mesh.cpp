@@ -43,8 +43,7 @@ void Mesh::set_texture(GLubyte *tex_image, GLint &tex_w,
         else  {
             stbi_image_free(tex_image);
             texture_bound = false;
-            _material = Material();
-            std::cout << "WARNING:: Using default material" << std::endl;
+            std::cout << "WARNING:: Something wrong with nr_channels" << std::endl;
             return;
         }
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -56,8 +55,7 @@ void Mesh::set_texture(GLubyte *tex_image, GLint &tex_w,
         std::cout << "SUCCESS:: Texture has been loaded" << std::endl;
     } else {
         texture_bound = false;
-        _material = Material();
-        std::cout << "WARNING:: Using default material" << std::endl;
+        std::cout << "WARNING:: No texture was provided" << std::endl;
     }
     glDisable(GL_TEXTURE_2D);
     glBindVertexArray(0);
