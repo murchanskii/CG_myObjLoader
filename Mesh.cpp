@@ -7,22 +7,6 @@
 
 Mesh::Mesh(const std::vector<GLfloat> &vertices,
            const std::vector<GLfloat> &normals,
-           const std::vector<GLfloat> &tex_coords,
-           Material material) {
-    _material = material;
-    _vertices = vertices;
-    _tex_coords = tex_coords;
-    if (normals.empty())
-        set_surface_normal();
-    else
-        _normals = normals;
-
-    normalize_vertices();
-    setupMesh();
-}
-
-Mesh::Mesh(const std::vector<GLfloat> &vertices,
-           const std::vector<GLfloat> &normals,
            const std::vector<GLfloat> &tex_coords) {
     _material = Material();
     _vertices = vertices;
@@ -32,12 +16,16 @@ Mesh::Mesh(const std::vector<GLfloat> &vertices,
     else
         _normals = normals;
 
-    normalize_vertices();
     setupMesh();
 }
 
-void Mesh::set_texture() {
+void Mesh::set_material(GLfloat ambient[3], GLfloat diffuse[3],
+                        GLfloat specular[3], GLfloat &shininess) {
     texture_bound = false;
+    _material.ambient = glm::vec3(ambient[0], ambient[1], ambient[2]);
+    _material.diffuse = glm::vec3(diffuse[0], diffuse[1], diffuse[2]);
+    _material.specular = glm::vec3(specular[0], specular[1], specular[2]);
+    _material.shininess = shininess;
 }
 
 void Mesh::set_texture(GLubyte *tex_image, GLint &tex_w,
@@ -46,8 +34,18 @@ void Mesh::set_texture(GLubyte *tex_image, GLint &tex_w,
     glBindTexture(GL_TEXTURE_2D, _texture);
     if (tex_image) {
         texture_bound = true;
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                     tex_w, tex_h, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_image);
+        if (nr_channels == 3)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                         tex_w, tex_h, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_image);
+        else if (nr_channels == 4)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                         tex_w, tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_image);
+        else  {
+            stbi_image_free(tex_image);
+            texture_bound = false;
+            std::cout << "WARNING:: Something wrong with nr_channels" << std::endl;
+            return;
+        }
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -57,7 +55,7 @@ void Mesh::set_texture(GLubyte *tex_image, GLint &tex_w,
         std::cout << "SUCCESS:: Texture has been loaded" << std::endl;
     } else {
         texture_bound = false;
-        std::cout << "ERROR:: Failed to load texture" << std::endl;
+        std::cout << "WARNING:: No texture was provided" << std::endl;
     }
     glDisable(GL_TEXTURE_2D);
     glBindVertexArray(0);
@@ -97,21 +95,6 @@ glm::vec3 Mesh::calculate_surface_normal(const glm::vec3 &p1,
     normal.y = u.z * v.x - u.x * v.z;
     normal.z = u.x * v.y - u.y * v.x;
     return normal;
-}
-
-void Mesh::normalize_vertices() {
-    long long int max_element_id = std::distance(_vertices.begin(),
-                                         std::max_element(_vertices.begin(),
-                                                          _vertices.end(),
-                                                          [](GLfloat a, GLfloat b) {
-                                                              return (std::abs(a) < std::abs(b));
-                                                          }));
-    GLfloat max_element = std::abs(_vertices[max_element_id]);
-    std::transform(_vertices.begin(), _vertices.end(), _vertices.begin(),
-                   [max_element] (GLfloat elem) { return elem / max_element; });
-    for (GLint i = 1; i < _vertices.size(); i += 3) {
-        _vertices[i] -= 0.5f;
-    }
 }
 
 void Mesh::setupMesh() {
@@ -161,7 +144,7 @@ void Mesh::draw(Program &shader_program, MVP_matrix &position) {
     shader_program.uniform3fv("mtl.specular", _material.specular);
     shader_program.uniform1f("mtl.shininess", _material.shininess);
     shader_program.uniform1f("texture_is_bound", texture_bound);
-    shader_program.uniform3fv("sun.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+    shader_program.uniform3fv("sun.direction", glm::vec3(0.0f, -1.0f, -1.0f));
 
     if (texture_bound)
         glBindTexture(GL_TEXTURE_2D, _texture);

@@ -22,6 +22,64 @@ void Model::draw(Program &shader_program, MVP_matrix &position) {
     }
 }
 
+void Model::create_model(std::vector<std::vector<GLfloat>> &vertices,
+                         std::vector<std::vector<GLfloat>> &normals,
+                         std::vector<std::vector<GLfloat>> &texcoords,
+                         std::vector<tinyobj::material_t> &materials,
+                         std::vector<GLint> &material_ids) {
+    for (GLuint d = 0; d < 3; ++d)
+        center_model_by_dimension(d, vertices);
+
+    GLuint num_shapes = vertices.size();
+    GLfloat max_elements[num_shapes];
+    for (GLuint s = 0; s < num_shapes; ++s) {
+        long long int max_element_id = std::distance(vertices[s].begin(),
+                                 std::max_element(vertices[s].begin(),
+                                          vertices[s].end(),
+                                          [](GLfloat a, GLfloat b) {
+                                              return (std::abs(a) < std::abs(b));
+                                          }));
+        max_elements[s] = vertices[s][max_element_id];
+    }
+    GLfloat *maxptr = std::max_element(max_elements, max_elements + num_shapes);
+    GLfloat max = *maxptr;
+    for (GLuint s = 0; s < num_shapes; ++s) {
+        std::transform(vertices[s].begin(), vertices[s].end(), vertices[s].begin(),
+                       [max](GLfloat elem) { return elem / max; });
+        Mesh mesh = Mesh(vertices[s], normals[s], texcoords[s]);
+        _meshes.emplace_back(mesh);
+        load_texture(_meshes[s], materials[material_ids[s]]);
+    }
+}
+
+void Model::center_model_by_dimension(GLuint &first_idx,
+                                      std::vector<std::vector<GLfloat>> &vertices) {
+    GLuint num_shapes = vertices.size();
+
+    GLfloat min, max;
+    min = max = vertices[0][first_idx];
+    for (GLuint s = 0; s < num_shapes; ++s) {
+        for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
+            min = std::min(min, vertices[s][i]);
+            max = std::max(max, vertices[s][i]);
+        }
+    }
+    GLfloat half_h = (max - min) * 0.5f;
+    if (max < half_h) {
+        for (GLuint s = 0; s < num_shapes; ++s) {
+            for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
+                vertices[s][i] += half_h - max;
+            }
+        }
+    } else if (max > half_h) {
+        for (GLuint s = 0; s < num_shapes; ++s) {
+            for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
+                vertices[s][i] -= max - half_h;
+            }
+        }
+    }
+}
+
 void Model::load_model(std::string path) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -50,15 +108,14 @@ void Model::load_model(std::string path) {
     }
 
     if (materials.empty()) {
-        tinyobj::material_t material;
-        tinyobj::InitMaterial(&material);
-        materials.emplace_back(material);
+        materials.emplace_back(tinyobj::material_t());
         mtl_default = true;
     }
 
     std::vector<GLfloat> vertices[shapes.size()];
     std::vector<GLfloat> normals[shapes.size()];
     std::vector<GLfloat> texcoords[shapes.size()];
+    GLint material_ids[shapes.size()];
 
     // Loop over shapes
     for (size_t s = 0; s < shapes.size(); ++s) {
@@ -90,23 +147,22 @@ void Model::load_model(std::string path) {
             // per-face material
             shapes[s].mesh.material_ids[f];
         }
-        if (mtl_default) {
-            Mesh mesh(Mesh(vertices[s], normals[s], texcoords[s]));
-            _meshes.emplace_back(mesh);
-        }
-        else {
-            Material material = get_materials(materials[s]);
-            Mesh mesh(Mesh(vertices[s], normals[s], texcoords[s], material));
-            _meshes.emplace_back(mesh);
-        }
-        load_texture(_meshes[s], materials[s]);
+        GLint index = mtl_default ? 0 : shapes[s].mesh.material_ids[0];
+        material_ids[s] = index;
     }
+    std::vector<std::vector<GLfloat>> all_vertices(vertices, vertices + shapes.size());
+    std::vector<std::vector<GLfloat>> all_normals(normals, normals + shapes.size());
+    std::vector<std::vector<GLfloat>> all_texcoords(texcoords, texcoords + shapes.size());
+    std::vector<GLint> all_material_ids(material_ids, material_ids + shapes.size());
+    create_model(all_vertices, all_normals, all_texcoords, materials, all_material_ids);
 }
 
 void Model::load_texture(Mesh &mesh, tinyobj::material_t &material) {
-    if (material.diffuse_texname.empty()) {
-        mesh.set_texture();
-        return;
+    if (material.name.length() > 0) {
+        mesh.set_material(material.ambient,
+                          material.diffuse,
+                          material.specular,
+                          material.shininess);
     }
     GLint tex_w, tex_h, nr_channels;
     std::string filename = _directory_to_obj + material.diffuse_texname;
@@ -117,15 +173,4 @@ void Model::load_texture(Mesh &mesh, tinyobj::material_t &material) {
     GLfloat border_color[] = {1.0f, 1.0f, 0.0f, 1.0f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
     mesh.set_texture(tex_image, tex_w, tex_h, nr_channels);
-}
-
-Material Model::get_materials(tinyobj::material_t &material) {
-    Material result;
-    result.shininess = material.shininess;
-    for (GLuint i = 0; i < 3; ++i) {
-        result.ambient[i] = material.ambient[i];
-        result.diffuse[i] = material.diffuse[i];
-        result.specular[i] = material.specular[i];
-    }
-    return result;
 }
