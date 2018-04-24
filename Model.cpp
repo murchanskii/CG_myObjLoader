@@ -22,11 +22,14 @@ void Model::draw(Program &shader_program, MVP_matrix &position) {
     }
 }
 
-void Model::fix_vertices(std::vector<std::vector<GLfloat>> &vertices,
+void Model::create_model(std::vector<std::vector<GLfloat>> &vertices,
                          std::vector<std::vector<GLfloat>> &normals,
                          std::vector<std::vector<GLfloat>> &texcoords,
                          std::vector<tinyobj::material_t> &materials,
                          std::vector<GLint> &material_ids) {
+    for (GLuint d = 0; d < 3; ++d)
+        center_model_by_dimension(d, vertices);
+
     GLuint num_shapes = vertices.size();
     GLfloat max_elements[num_shapes];
     for (GLuint s = 0; s < num_shapes; ++s) {
@@ -46,6 +49,34 @@ void Model::fix_vertices(std::vector<std::vector<GLfloat>> &vertices,
         Mesh mesh = Mesh(vertices[s], normals[s], texcoords[s]);
         _meshes.emplace_back(mesh);
         load_texture(_meshes[s], materials[material_ids[s]]);
+    }
+}
+
+void Model::center_model_by_dimension(GLuint &first_idx,
+                                      std::vector<std::vector<GLfloat>> &vertices) {
+    GLuint num_shapes = vertices.size();
+
+    GLfloat min, max;
+    min = max = vertices[0][first_idx];
+    for (GLuint s = 0; s < num_shapes; ++s) {
+        for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
+            min = std::min(min, vertices[s][i]);
+            max = std::max(max, vertices[s][i]);
+        }
+    }
+    GLfloat half_h = (max - min) * 0.5f;
+    if (max < half_h) {
+        for (GLuint s = 0; s < num_shapes; ++s) {
+            for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
+                vertices[s][i] += half_h - max;
+            }
+        }
+    } else {
+        for (GLuint s = 0; s < num_shapes; ++s) {
+            for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
+                vertices[s][i] -= max - half_h;
+            }
+        }
     }
 }
 
@@ -123,7 +154,7 @@ void Model::load_model(std::string path) {
     std::vector<std::vector<GLfloat>> all_normals(normals, normals + shapes.size());
     std::vector<std::vector<GLfloat>> all_texcoords(texcoords, texcoords + shapes.size());
     std::vector<GLint> all_material_ids(material_ids, material_ids + shapes.size());
-    fix_vertices(all_vertices, all_normals, all_texcoords, materials, all_material_ids);
+    create_model(all_vertices, all_normals, all_texcoords, materials, all_material_ids);
 }
 
 void Model::load_texture(Mesh &mesh, tinyobj::material_t &material) {

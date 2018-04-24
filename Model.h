@@ -17,11 +17,13 @@ private:
     void load_texture(Mesh &mesh, tinyobj::material_t &material);
     void load_model(std::string path);
     std::string get_base_directory(const std::string &filepath);
-    void fix_vertices(std::vector<std::vector<GLfloat>> &vertices,
+    void create_model(std::vector<std::vector<GLfloat>> &vertices,
                       std::vector<std::vector<GLfloat>> &normals,
                       std::vector<std::vector<GLfloat>> &texcoords,
                       std::vector<tinyobj::material_t> &materials,
                       std::vector<GLint> &material_ids);
+    void center_model_by_dimension(GLuint &first_idx,
+                                   std::vector<std::vector<GLfloat>> &vertices);
 public:
     MVP_matrix mvp_matrix;
 

@@ -55,8 +55,6 @@ int main() {
         myModel.mvp_matrix.model = glm::translate(myModel.mvp_matrix.model, glm::vec3(-0.5f, 0.0f, 0.0f));*/
 
         myModel1.mvp_matrix.model = glm::mat4(1.0f);
-        myModel1.mvp_matrix.model = glm::translate(myModel1.mvp_matrix.model,
-                                                   glm::vec3(0.2f, 0.0f, 0.0f));
         myModel1.mvp_matrix.model = glm::rotate(myModel1.mvp_matrix.model,
                                        (GLfloat)glfwGetTime() * glm::radians(-20.0f),
                                        glm::vec3(0.0f, 1.0f, 0.0f));

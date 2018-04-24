@@ -16,7 +16,6 @@ Mesh::Mesh(const std::vector<GLfloat> &vertices,
     else
         _normals = normals;
 
-    normalize_vertices();
     setupMesh();
 }
 
@@ -98,12 +97,6 @@ glm::vec3 Mesh::calculate_surface_normal(const glm::vec3 &p1,
     normal.y = u.z * v.x - u.x * v.z;
     normal.z = u.x * v.y - u.y * v.x;
     return normal;
-}
-
-void Mesh::normalize_vertices() {
-    for (GLint i = 1; i < _vertices.size(); i += 3) {
-        _vertices[i] -= 0.5f;
-    }
 }
 
 void Mesh::setupMesh() {

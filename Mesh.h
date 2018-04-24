@@ -30,7 +30,6 @@ private:
                                        const glm::vec3 &p2,
                                        const glm::vec3 &p3);
     void set_surface_normal();
-    void normalize_vertices();
 public:
     Mesh(const std::vector<GLfloat> &vertices,
          const std::vector<GLfloat> &normals,
