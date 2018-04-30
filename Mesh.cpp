@@ -20,12 +20,22 @@ Mesh::Mesh(const std::vector<GLfloat> &vertices,
 }
 
 void Mesh::set_material(GLfloat ambient[3], GLfloat diffuse[3],
-                        GLfloat specular[3], GLfloat &shininess) {
+                        GLfloat specular[3], GLfloat &shininess,
+                        GLint &illum, GLfloat &dissolve) {
     texture_bound = false;
-    _material.ambient = glm::vec3(ambient[0], ambient[1], ambient[2]);
-    _material.diffuse = glm::vec3(diffuse[0], diffuse[1], diffuse[2]);
-    _material.specular = glm::vec3(specular[0], specular[1], specular[2]);
-    _material.shininess = shininess;
+    _material.illum = illum;
+    _material.dissolve = dissolve;
+    switch (_material.illum) {
+        case 2:
+            _material.specular = glm::vec3(specular[0], specular[1], specular[2]);
+            _material.shininess = shininess;
+        case 1:
+        default:
+            _material.diffuse = glm::vec3(diffuse[0], diffuse[1], diffuse[2]);
+        case 0:
+            _material.ambient = glm::vec3(ambient[0], ambient[1], ambient[2]);
+            break;
+    }
 }
 
 void Mesh::set_texture(GLubyte *tex_image, GLint &tex_w,
@@ -134,17 +144,29 @@ void Mesh::setupMesh() {
 }
 
 void Mesh::draw(Program &shader_program, MVP_matrix &position) {
+    if (_material.dissolve < 1.0f)
+        glDisable(GL_DEPTH_TEST);
     shader_program.Use();
 
     shader_program.uniformMatrix4fv("model", position.model);
     shader_program.uniformMatrix4fv("view", position.view);
     shader_program.uniformMatrix4fv("projection", position.projection);
+
     shader_program.uniform3fv("mtl.ambient", _material.ambient);
     shader_program.uniform3fv("mtl.diffuse", _material.diffuse);
     shader_program.uniform3fv("mtl.specular", _material.specular);
     shader_program.uniform1f("mtl.shininess", _material.shininess);
+    shader_program.uniform1f("mtl.dissolve", _material.dissolve);
     shader_program.uniform1f("texture_is_bound", texture_bound);
-    shader_program.uniform3fv("sun.direction", glm::vec3(0.0f, -1.0f, -1.0f));
+
+    shader_program.uniform3fv("sun[0].direction", glm::vec3(0.0f, 5.0f, 5.0f));
+    shader_program.uniform3fv("sun[0].ambient", glm::vec3(0.2f));
+    shader_program.uniform3fv("sun[0].diffuse", glm::vec3(0.4f));
+    shader_program.uniform3fv("sun[0].specular", glm::vec3(0.2f));
+    shader_program.uniform3fv("sun[1].direction", glm::vec3(0.0f, -5.0f, -5.0f));
+    shader_program.uniform3fv("sun[1].ambient", glm::vec3(0.2f));
+    shader_program.uniform3fv("sun[1].diffuse", glm::vec3(0.4f));
+    shader_program.uniform3fv("sun[1].specular", glm::vec3(0.2f));
 
     if (texture_bound)
         glBindTexture(GL_TEXTURE_2D, _texture);
@@ -154,4 +176,7 @@ void Mesh::draw(Program &shader_program, MVP_matrix &position) {
     glBindVertexArray(0);
     if (texture_bound)
         glDisable(GL_TEXTURE_2D);
+
+    if (_material.dissolve < 1.0f)
+        glEnable(GL_DEPTH_TEST);
 }

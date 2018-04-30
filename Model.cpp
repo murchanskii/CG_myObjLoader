@@ -48,7 +48,8 @@ void Model::create_model(std::vector<std::vector<GLfloat>> &vertices,
                        [max](GLfloat elem) { return elem / max; });
         Mesh mesh = Mesh(vertices[s], normals[s], texcoords[s]);
         _meshes.emplace_back(mesh);
-        load_texture(_meshes[s], materials[material_ids[s]]);
+        if (material_ids[s] >= 0)
+            load_texture(_meshes[s], materials[material_ids[s]]);
     }
 }
 
@@ -64,18 +65,10 @@ void Model::center_model_by_dimension(GLuint &first_idx,
             max = std::max(max, vertices[s][i]);
         }
     }
-    GLfloat half_h = (max - min) * 0.5f;
-    if (max < half_h) {
-        for (GLuint s = 0; s < num_shapes; ++s) {
-            for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
-                vertices[s][i] += half_h - max;
-            }
-        }
-    } else if (max > half_h) {
-        for (GLuint s = 0; s < num_shapes; ++s) {
-            for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
-                vertices[s][i] -= max - half_h;
-            }
+    GLfloat diff = (max + min) * 0.5f;
+    for (GLuint s = 0; s < num_shapes; ++s) {
+        for (GLuint i = first_idx; i < vertices[s].size(); i += 3) {
+            vertices[s][i] -= diff;
         }
     }
 }
@@ -162,12 +155,14 @@ void Model::load_texture(Mesh &mesh, tinyobj::material_t &material) {
         mesh.set_material(material.ambient,
                           material.diffuse,
                           material.specular,
-                          material.shininess);
+                          material.shininess,
+                          material.illum,
+                          material.dissolve);
     }
     GLint tex_w, tex_h, nr_channels;
     std::string filename = _directory_to_obj + material.diffuse_texname;
 
-    GLubyte *tex_image = stbi_load(filename.c_str(),
+     unsigned char *tex_image = stbi_load(filename.c_str(),
                                    &tex_w, &tex_h, &nr_channels, 0);
 
     GLfloat border_color[] = {1.0f, 1.0f, 0.0f, 1.0f};
