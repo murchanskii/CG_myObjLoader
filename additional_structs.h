@@ -14,15 +14,23 @@ struct Material {
     glm::vec3 diffuse;
     glm::vec3 specular;
     GLfloat shininess;
+    GLint illum;
+    GLfloat dissolve;
 
-    Material() : ambient(0.4f),
+
+
+    Material() : ambient(0.3f),
                  diffuse(0.5f),
-                 specular(0.5f),
-                 shininess(0.8f)
+                 specular(0.3f),
+                 shininess(1.0f),
+                 dissolve(1.0f),
+                 illum(1)
     { }
 
-    Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spec, GLfloat shine) :
-            ambient(amb), diffuse(dif), specular(spec), shininess(shine)
+    Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spec, GLfloat shine,
+             GLint illumination, GLfloat diss) :
+            ambient(amb), diffuse(dif), specular(spec), shininess(shine),
+            illum(illumination), dissolve(diss)
     { }
 };
 
