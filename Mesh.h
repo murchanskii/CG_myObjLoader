@@ -35,7 +35,8 @@ public:
          const std::vector<GLfloat> &normals,
          const std::vector<GLfloat> &tex_coords);
     void set_material(GLfloat ambient[3], GLfloat diffuse[3],
-                      GLfloat specular[3], GLfloat &shininess);
+                      GLfloat specular[3], GLfloat &shininess,
+                      GLint &illum, GLfloat &dissolve);
     void set_texture(GLubyte *tex_image, GLint &tex_w,
                      GLint tex_h, GLint nr_channels);
     void draw(Program &shader_program, MVP_matrix &position);
