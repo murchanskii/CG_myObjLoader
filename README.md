@@ -8,6 +8,6 @@ A small university project (OpenGL) using tinyobjloader and stb libraries
 + ONLY diffuse texture support
 
 ## Known issues
-- Some models can be loading inverted by certain axis
+- Some models can be loaded inverted by certain axis
 - No specular and normal texture support
 - ONLY Ka, Kd, Ks, Ns, d, illum from .mtl file are supported
