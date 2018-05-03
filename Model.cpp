@@ -41,11 +41,14 @@ void Model::create_model(std::vector<std::vector<GLfloat>> &vertices,
                                           }));
         max_elements[s] = vertices[s][max_element_id];
     }
-    GLfloat *maxptr = std::max_element(max_elements, max_elements + num_shapes);
+    GLfloat *maxptr = std::max_element(max_elements, max_elements + num_shapes,
+                                       [](GLfloat a, GLfloat b) {
+                                            return (std::abs(a) < std::abs(b));
+                                        });
     GLfloat max = *maxptr;
     for (GLuint s = 0; s < num_shapes; ++s) {
         std::transform(vertices[s].begin(), vertices[s].end(), vertices[s].begin(),
-                       [max](GLfloat elem) { return elem / max; });
+                       [max](GLfloat elem) { return elem / std::abs(max); });
         Mesh mesh = Mesh(vertices[s], normals[s], texcoords[s]);
         _meshes.emplace_back(mesh);
         if (material_ids[s] >= 0)
