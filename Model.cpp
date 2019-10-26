@@ -90,7 +90,8 @@ void Model::load_model(std::string path) {
 #endif
 
     std::string err;
-    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err,
+    std::string warn;
+    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
                                 path.c_str(), _directory_to_obj.c_str());
     if (!err.empty()) { // `err` may contain warning message.
         std::cerr << err << std::endl;

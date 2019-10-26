@@ -5,6 +5,8 @@ in vec3 fPosition;
 in vec3 fLightPos;
 in vec2 fTexCoords;
 
+out vec4 fragcolor0;
+
 struct GlobalIlluminance {
     vec3 direction;
 
@@ -25,7 +27,7 @@ struct Material {
 uniform GlobalIlluminance sun[NR_POINT_LIGHTS];
 
 uniform Material mtl;
-uniform sampler2D texture;
+uniform sampler2D texture0;
 uniform bool texture_is_bound;
 
 vec3 CalcGlobalLight(GlobalIlluminance light, vec3 normal, vec3 viewDir) {
@@ -41,7 +43,7 @@ vec3 CalcGlobalLight(GlobalIlluminance light, vec3 normal, vec3 viewDir) {
 
     vec3 color;
         if (texture_is_bound)
-            color = vec3(texture(texture, fTexCoords));
+            color = vec3(texture(texture0, fTexCoords));
         else
             color = mtl.diffuse + mtl.specular;
 
@@ -77,5 +79,5 @@ void main() {
     vec3 result;
     for (int i = 0; i < NR_POINT_LIGHTS; ++i)
         result += CalcGlobalLight(sun[i], norm, viewDir);
-    gl_FragColor = vec4(result, mtl.dissolve);
+    fragcolor0 = vec4(result, mtl.dissolve);
 }

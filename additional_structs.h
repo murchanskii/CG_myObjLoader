@@ -65,7 +65,7 @@ static bool file_exists(const std::string &abs_filename) {
 }
 
 static bool is_obj_file(const std::string &abs_filename) {
-
+    return true;
 }
 
 #endif //CG_LAB_ADDITIONAL_STRUCTS_H
